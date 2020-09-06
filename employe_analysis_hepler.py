@@ -19,11 +19,12 @@ from plotly.subplots import make_subplots
 from datetime import date,time
 import numpy as np
 from math import floor
-
+df = pd.DataFrame()
+ 
 def preprocess(uploaded):
   for fn in uploaded.keys():
     temp_df = pd.read_csv(fn)
-  df = pd.DataFrame()
+
   df[['Date1','Date2','Item','Destination','Type','Rate','Duration','Amount','Currency']] = pd.DataFrame(temp_df['Date;Date;Item;Destination;Type;Rate;Duration;Amount;Currency'].str.split(';').tolist())
   df['Date'] = df['Date2'].apply(lambda x: x[1:11])
   df['Time'] = df['Date2'].apply(lambda x: x[12:20])
