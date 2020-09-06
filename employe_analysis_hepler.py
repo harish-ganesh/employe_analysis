@@ -61,7 +61,7 @@ class EmployeAnalysis:
 
     call_count['TotalCallDuration (in minutes)'] = call_count['TotalCallDuration (in sec)'].apply(lambda x : x/60)
     call_count['TotalCallDuration'] = call_count['TotalCallDuration (in sec)'].apply(lambda x : self.convert(x))
-    fig = px.bar(call_count, x='Date', y='TotalCallDuration (in minutes)',text='TotalCallDuration',color='#Calls')
+    fig = px.bar(call_count, x='Date', y='#Calls',text='TotalCallDuration',color='TotalCallDuration (in minutes))
     call_count = call_count.sort_values(by=['Date'])
     cols = ['Date','#Calls','TotalCallDuration']
     self.to_excel(call_count,temp,str(st_date)+'_'+str(end_date)+'_analysis.xls',cols)
