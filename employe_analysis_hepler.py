@@ -16,9 +16,7 @@ class EmployeAnalysis:
     self.df = pd.DataFrame()
     self.central = timezone('US/Central')
 
-  def preprocess(self,uploaded):
-    for fn in uploaded.keys():
-      temp_df = pd.read_csv(fn)
+  def preprocess(self,temp_df):
     self.df[['Date1','Date2','Item','Destination','Type','Rate','Duration','Amount','Currency']] = pd.DataFrame(temp_df['Date;Date;Item;Destination;Type;Rate;Duration;Amount;Currency'].str.split(';').tolist())
     # self.df['Date'] = self.df['Date2'].apply(lambda x: x[1:11])
     # self.df['Time'] = self.df['Date2'].apply(lambda x: x[12:20])
@@ -51,7 +49,7 @@ class EmployeAnalysis:
     seconds %= 60
     return "%d:%02d:%02d" % (hour, minutes, seconds)
 
-  def plot_multiple_days(self,temp,st_date,end_date):
+  def plot_multiple_days(self,temp,st_date,end_date,Name):
     call_count = pd.DataFrame()
     call_count[['Date','#Calls']] = temp['Date'].value_counts().reset_index()
     call_count['TotalCallDuration (in sec)']=''
@@ -68,10 +66,10 @@ class EmployeAnalysis:
                  text='TotalCallDuration',color='#Calls',category_orders = {'Date':sorted_date})
     call_count = call_count.sort_values(by=['Date'])
     cols = ['Date','#Calls','TotalCallDuration']
-    self.to_excel(call_count,temp,str(st_date)+'_'+str(end_date)+'_analysis.xls',cols)
+    self.to_excel(call_count,temp,Name+'_'+str(st_date)+'_'+str(end_date)+'_analysis.xls',cols)
     fig.update_layout(autosize=False,width=1200,height=500,
                       title={
-                          'text': "Calls from "+str(st_date)+' to '+str(end_date),
+                          'text': Name+"'s from "+str(st_date)+' to '+str(end_date),
                           'y':0.9,
                           'x':0.5,
                           'xanchor': 'center',
@@ -87,7 +85,7 @@ class EmployeAnalysis:
     return ([unconnected_calls, invalid_calls, temp.shape[0], sms],
             total_calls,self.convert(temp['Duration_in_sec'].sum()))
     
-  def plot_pie(self,temp,d):
+  def plot_pie(self,temp,d,Name):
     values,total_calls,duration = self.get_stats(temp)
     labels = ['Unconnected calls','Calls <5mins','Valid calls','SMS']  
     pie_fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
@@ -98,14 +96,14 @@ class EmployeAnalysis:
     print("Valid Calls Duration: ", duration)
     pie_fig.update_layout(autosize=False,width=1000,height=500,
                           title={
-                          'text': "Call summary: "+d,
+                          'text': Name+" on "+d,
                           'y':0.9,
                           'x':0.5,
                           'xanchor': 'center',
                           'yanchor': 'top'})
     pie_fig.show()
 
-  def plot_pie2(self,temp,s_d,e_d):
+  def plot_pie2(self,temp,s_d,e_d,Name):
     values,total_calls,duration = self.get_stats(temp)
     labels = ['Unconnected calls','Calls <5mins','Valid calls','SMS']  
     pie_fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
@@ -116,7 +114,7 @@ class EmployeAnalysis:
     print("Valid Calls Duration: ", duration)
     pie_fig.update_layout(autosize=False,width=1000,height=500,
                           title={
-                          'text': "Call summary: "+s_d+' to '+e_d,
+                          'text': Name+" on "+s_d+' to '+e_d,
                           'y':0.9,
                           'x':0.5,
                           'xanchor': 'center',
@@ -130,7 +128,7 @@ class EmployeAnalysis:
     call_count = call_count.append(summ)
     call_count[cols].to_excel(fname,index=False)
 
-  def plot_one_day(self,temp,ti,Date):
+  def plot_one_day(self,temp,ti,Date,Name):
     call_count = pd.DataFrame()
     temp = temp[temp['Duration_in_sec'] >= 5]
     call_count[['TimePeriod','#Calls']] = temp[ti].value_counts().reset_index()
@@ -166,52 +164,94 @@ class EmployeAnalysis:
                           'yanchor': 'top'})
     call_count = call_count.sort_values(by=['TimePeriod'])
     cols = ['TimePeriod','#Calls','TotalCallDuration']#,'Performance'
-    self.to_excel(call_count,temp,str(Date)+'_'+ti+'_analysis.xls',cols)
+    self.to_excel(call_count,temp,Name+'_'+str(Date)+'_'+ti+'_analysis.xls',cols)
     fig.show()
 
-  def daily_analysis(self,Date=None,ti='Hourly'): 
+  def daily_analysis(self,Name,Date=None,ti='Hourly'): 
     if Date:
       temp = self.df[self.df['Date']==Date]
-      self.plot_one_day(temp,ti,Date)
+      self.plot_one_day(temp,ti,Date,Name)
 
-  def monthly_analysis(self,start_date=None,end_date=None): 
+  def monthly_analysis(self,Name,start_date=None,end_date=None): 
     if start_date and end_date:
       temp = self.df[self.df['Date']>=start_date]
       temp = temp[temp['Date']<=end_date]
-      self.plot_multiple_days(temp,start_date,end_date)
+      self.plot_multiple_days(temp,start_date,end_date,Name)
 
-  def daily_analysis_pie(self,Date=None): 
+  def daily_analysis_pie(self,Name,Date=None): 
     if Date:
       temp = self.df[self.df['Date']==Date]
-      self.plot_pie(temp,str(Date))
+      self.plot_pie(temp,str(Date),Name)
 
-  def monthly_analysis_pie(self,start_date=None,end_date=None): 
+  def monthly_analysis_pie(self,Name,start_date=None,end_date=None): 
     if start_date and end_date:
       temp = self.df[self.df['Date']>=start_date]
       temp = temp[temp['Date']<=end_date]
-      self.plot_pie2(temp,str(start_date),str(end_date))
+      self.plot_pie2(temp,str(start_date),str(end_date),Name)
 
+###############################################################################
 
-def bar1(x):
-  interact(x.daily_analysis,Date=widgets.DatePicker(),
+def select_bar1(Name,Date=None,ti='Hourly'):
+  uploaded[Name].daily_analysis(Name.split('.')[0],Date,ti)
+
+def select_bar2(Name,start_date=None,end_date=None):
+  uploaded[Name].monthly_analysis(Name.split('.')[0],start_date,end_date)
+
+def bar1():
+  names = list(uploaded.keys())
+  options = list()
+  for name in names:
+    options.append(tuple([name.split('.')[0],name]))
+  interact(select_bar1,
+           Name = widgets.Dropdown(options=options,value=names[0],description='Employe:',),
+           Date=widgets.DatePicker(),
            ti=widgets.SelectionSlider(options=['Hourly', 'Quarterly'],
     value='Hourly',
     description='X-axis Interval: ',
     disabled=False
   ))
 
-def bar2(x):
-  interact(x.monthly_analysis,
+
+def bar2():
+  names = list(uploaded.keys())
+  options = list()
+  for name in names:
+    options.append(tuple([name.split('.')[0],name]))
+  interact(select_bar2,
+          Name = widgets.Dropdown(options=options,value=names[0],description='Employe:',),
         start_date=widgets.DatePicker(),
         end_date=widgets.DatePicker())
 
-def dougnut1(x):
-  interact(x.daily_analysis_pie,Date=widgets.DatePicker())
+def select_dougnut1(Name,Date=None):
+  uploaded[Name].daily_analysis_pie(Name.split('.')[0],Date)
 
-def dougnut2(x):
-  interact(x.monthly_analysis_pie,start_date=widgets.DatePicker(),
+def select_dougnut2(Name,start_date=None,end_date=None):
+  uploaded[Name].monthly_analysis_pie(Name.split('.')[0],start_date,end_date)
+
+def dougnut1():
+  names = list(uploaded.keys())
+  options = list()
+  for name in names:
+    options.append(tuple([name.split('.')[0],name]))
+  interact(select_dougnut1,
+           Name = widgets.Dropdown(options=options,value=names[0],description='Employe:',),
+           Date=widgets.DatePicker())
+
+def dougnut2():
+  names = list(uploaded.keys())
+  options = list()
+  for name in names:
+    options.append(tuple([name.split('.')[0],name]))
+  interact(select_dougnut2,
+           Name = widgets.Dropdown(options=options,value=names[0],description='Employe:',),
+           start_date=widgets.DatePicker(),
         end_date=widgets.DatePicker())
   
-def upload(x):
-  file_ = files.upload()
-  x.preprocess(file_)
+def upload():
+  global uploaded
+  uploaded = files.upload()
+  emp_list = list
+  for fn in uploaded.keys():
+      uploaded[fn] = EmployeAnalysis()
+      temp_df = pd.read_csv(fn)
+      uploaded[fn].preprocess(temp_df)
