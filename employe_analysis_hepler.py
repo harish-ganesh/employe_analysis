@@ -248,18 +248,18 @@ def dougnut2():
            start_date=widgets.DatePicker(),
         end_date=widgets.DatePicker())
 
-def compare():
+def compare_chart(Names):
   is_empty = True
   collective_df = pd.DataFrame()
-  for fn in uploaded.keys():     
+  for fn in Names:     
     if is_empty:
-      temp = deepcopy(uploaded[fn].df)
+      temp = deepcopy(uploaded[fn+'.csv'].df)
       collective_df[['Date','#Calls']] = temp['Date'].value_counts().reset_index()
       collective_df["Name"] = fn.split('.')[0]
       is_empty = False
     else:
       temp2_df = pd.DataFrame()  
-      temp_df = deepcopy(uploaded[fn].df)
+      temp_df = deepcopy(uploaded[fn+'.csv'].df)
       temp2_df[['Date','#Calls']] = temp_df['Date'].value_counts().reset_index() 
       temp2_df["Name"] = fn.split('.')[0]
       collective_df = collective_df.append(temp2_df,ignore_index=True)
@@ -277,7 +277,6 @@ def compare():
   print("Total Calls:",collective_df['#Calls'].sum())
   fig.show()
 
-  
 def upload():
   global uploaded
   uploaded = files.upload()
@@ -286,3 +285,12 @@ def upload():
       uploaded[fn] = EmployeAnalysis()
       temp_df = pd.read_csv(fn)
       uploaded[fn].preprocess(temp_df)
+
+def compare():
+  names = list(uploaded.keys())
+  options = list()
+  for name in names:
+    options.append(name.split('.')[0])
+  value = (options[0],)
+  interact(compare_chart,
+           Names = widgets.SelectMultiple(options=tuple(options),value=value,description='Select Employes:'))
