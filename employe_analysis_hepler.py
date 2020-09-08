@@ -10,6 +10,7 @@ import numpy as np
 from math import floor
 from datetime import datetime
 from pytz import timezone
+from copy import deepcopy
 
 class EmployeAnalysis:
   def __init__(self):
