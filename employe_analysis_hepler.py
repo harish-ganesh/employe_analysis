@@ -246,6 +246,36 @@ def dougnut2():
            Name = widgets.Dropdown(options=options,value=names[0],description='Employe:',),
            start_date=widgets.DatePicker(),
         end_date=widgets.DatePicker())
+
+def compare():
+  is_empty = True
+  collective_df = pd.DataFrame()
+  for fn in uploaded.keys():     
+    if is_empty:
+      temp = deepcopy(uploaded[fn].df)
+      collective_df[['Date','#Calls']] = temp['Date'].value_counts().reset_index()
+      collective_df["Name"] = fn.split('.')[0]
+      is_empty = False
+    else:
+      temp2_df = pd.DataFrame()  
+      temp_df = deepcopy(uploaded[fn].df)
+      temp2_df[['Date','#Calls']] = temp_df['Date'].value_counts().reset_index() 
+      temp2_df["Name"] = fn.split('.')[0]
+      collective_df = collective_df.append(temp2_df,ignore_index=True)
+  sorted_date = list(collective_df['Date'].unique())
+  sorted_date.sort()
+  collective_df = collective_df.sort_values(by=['Date'])
+  fig = px.line(collective_df, x="Date", y="#Calls", color='Name',category_orders = {'Date':sorted_date})
+  fig.update_layout(autosize=False,width=1200,height=500,
+                          title={
+                          'text': 'Comparison Chart',
+                          'y':0.9,
+                          'x':0.5,
+                          'xanchor': 'center',
+                          'yanchor': 'top'})
+  print("Total Calls:",collective_df['#Calls'].sum())
+  fig.show()
+
   
 def upload():
   global uploaded
