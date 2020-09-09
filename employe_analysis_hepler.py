@@ -251,6 +251,17 @@ def dougnut2():
            start_date=widgets.DatePicker(),
         end_date=widgets.DatePicker())
 
+def add_zero(collective_df,Names):
+  for fn in Names:  
+    dates = collective_df[collective_df['Name']==fn.split('.')[0]]['Date'].tolist()
+    miss = set(collective_df['Date'].unique()) - set(dates) 
+    temp_df = pd.DataFrame()
+    temp_df['Date'] = list(miss)
+    temp_df['Name'] = fn
+    temp_df['#Calls'] = 0
+    collective_df = collective_df.append(temp_df)
+  return collective_df
+  
 def compare_chart(Names):
   is_empty = True
   collective_df = pd.DataFrame()
@@ -266,6 +277,7 @@ def compare_chart(Names):
       temp2_df[['Date','#Calls']] = temp_df['Date'].value_counts().reset_index() 
       temp2_df["Name"] = fn.split('.')[0]
       collective_df = collective_df.append(temp2_df,ignore_index=True)
+  collective_df = add_zero(collective_df,Names)
   sorted_date = list(collective_df['Date'].unique())
   sorted_date.sort()
   collective_df = collective_df.sort_values(by=['Date'])
@@ -303,10 +315,9 @@ def compare():
   value = (options[0],)
   interact(compare_chart,
            Names = widgets.SelectMultiple(options=tuple(options),value=value,description='Select Employes:'))
-
+  
 def set_diary(inter,nam):
   global internal_numbers
   global names
   internal_numbers = inter
-  names = nam
-  
+  names = nam  
