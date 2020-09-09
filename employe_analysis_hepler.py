@@ -13,22 +13,24 @@ from pytz import timezone
 from copy import deepcopy
 
 class EmployeAnalysis:
-  def __init__(self):
+  def __init__(self,Name):
     self.df = pd.DataFrame()
     self.central = timezone('US/Central')
+    self.Name = Name
 
   def preprocess(self,temp_df):
     self.df[['Date1','Date2','Item','Destination','Type','Rate','Duration','Amount','Currency']] = pd.DataFrame(temp_df['Date;Date;Item;Destination;Type;Rate;Duration;Amount;Currency'].str.split(';').tolist())
-    # self.df['Date'] = self.df['Date2'].apply(lambda x: x[1:11])
-    # self.df['Time'] = self.df['Date2'].apply(lambda x: x[12:20])
     self.df['Date'] = self.df['Date2'].apply(lambda x: self.convert_date_timezone(x))
     self.df['Time'] = self.df['Date2'].apply(lambda x: self.convert_time_timezone(x))
     self.df['Hourly'] = self.df['Time'].apply(lambda x: str(x[:2])+':00-'+str((int(x[:2])+1)%24)+':00')
     self.df['Quarterly'] = self.df['Time'].apply(lambda x: x[:2]+'Q'+str(floor(int(x[3:5])/15)+1))
-    #self.df['Date'] = self.df['Date'].apply(lambda x : date(int(x[:4]), int(x[5:7]), int(x[8:])))
-    #self.df = self.df.sort_values(['Date','Time'])
+    temp = self.df[self.df['Item'].isin(internal_numbers)][['Item','Date','Time','Duration']]
+    temp['Item'] = temp['Item'].replace(internal_numbers,names)
+    temp['Caller'] = self.Name
+    self.df = self.df[~self.df['Item'].isin(internal_numbers)]
     self.df['Duration_in_sec'] = self.df['Duration'].apply(lambda x: int(x.split(':')[0])*60*60+int(x.split(':')[1])*60+int(x.split(':')[2]) if not x=='' else 0)
-  
+    return temp
+
   def convert_date_timezone(self,t):
     t =t[1:11]+';'+t[12:20]+' GMT'
     published_time = datetime.strptime(t, '%Y-%m-%d;%H:%M:%S %Z')
@@ -281,10 +283,16 @@ def upload():
   global uploaded
   uploaded = files.upload()
   emp_list = list
+  internal_call_logs = pd.DataFrame(columns=['Caller','Item','Date','Time','Duration'])
   for fn in uploaded.keys():
-      uploaded[fn] = EmployeAnalysis()
+      uploaded[fn] = EmployeAnalysis(fn.split('.')[0])
       temp_df = pd.read_csv(fn)
-      uploaded[fn].preprocess(temp_df)
+      remove(fn)
+      temp = uploaded[fn].preprocess(temp_df)
+      internal_call_logs = internal_call_logs.append(temp)
+  internal_call_logs = internal_call_logs.rename(columns={'Item': 'Reciever'})
+  internal_call_logs = internal_call_logs.reset_index(drop=True)
+  return internal_call_logs
 
 def compare():
   names = list(uploaded.keys())
