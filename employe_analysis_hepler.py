@@ -304,9 +304,9 @@ def compare():
   interact(compare_chart,
            Names = widgets.SelectMultiple(options=tuple(options),value=value,description='Select Employes:'))
 
-def set_diary(internal_numbers,names):
+def set_diary(inter,nam):
   global internal_numbers
   global names
-  internal_numbers = internal_numbers
-  names = names
+  internal_numbers = inter
+  names = nam
   
